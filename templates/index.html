@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        async function handleFormSubmit(event, form) {
+            event.preventDefault();
+            const formData = new FormData(form);
+    
+            const response = await fetch(form.action, {
+                method: form.method,
+                body: formData // Отправка данных как формы
+            });
+    
+            if (response.ok) {
+                window.location.reload(); // Reload the page to show updated data
+            } else {
+                alert('An error occurred while processing your request.');
+            }
+        }
+    </script>    
+</head>
+<body>
+    <h1>Product Management</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Product ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product[0] }}</td>
+                <td>{{ product[1] }}</td>
+                <td>{{ product[2] }}</td>
+                <td>{{ product[3] }}</td>
+                <td>
+                    <form action="/delete_product/{{ product[0] }}" method="post" onsubmit="handleFormSubmit(event, this)" style="display:inline;">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Add Product</h2>
+    <form action="/add_product" method="post" onsubmit="handleFormSubmit(event, this)">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price" step="0.01" required>
+        <label for="product_id">Product ID:</label>
+        <input type="text" id="product_id" name="product_id" required>
+        <button type="submit">Add Product</button>
+    </form>
+</body>
+</html>
