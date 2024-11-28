@@ -1,0 +1,8 @@
+# Игнорировать файл
+/Users/georgygorovoy/Projects/AudioQuality/Sites/Kirputori/store.db 
+
+# Игнорировать все файлы с расширением .log
+*.log
+
+# Игнорировать папку
+folder_to_ignore/

@@ -8,6 +8,14 @@ app = Flask(__name__)
 conn = sqlite3.connect("store.db", check_same_thread=False)
 cursor = conn.cursor()
 
+try:
+    cursor.execute('ALTER TABLE products ADD COLUMN customer_id TEXT DEFAULT NULL;')
+    conn.commit()
+except sqlite3.OperationalError:
+    # Столбец уже существует
+    pass
+
+
 # Create table for products
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS products (
@@ -85,7 +93,6 @@ def add_product():
 
 
 @app.route('/delete_product/<int:product_id>', methods=['POST'])
-@app.route('/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     try:
         cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
@@ -107,6 +114,14 @@ def delete_product(product_id):
 
 @app.route('/calculate_total/<string:customer_id>', methods=['GET'])
 def calculate_total(customer_id):
+    try:
+        cursor.execute("SELECT SUM(price) FROM products WHERE customer_id = ?", (customer_id,))
+        total = cursor.fetchone()[0] or 0  # Если записей нет, возвращаем 0
+        discount = total * 0.1  # Рассчитываем скидку
+        final_total = total - discount
+        return jsonify({"total": total, "discount": discount, "final_total": final_total})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
     cursor.execute('''SELECT SUM(products.price) FROM purchases
                       JOIN products ON purchases.product_id = products.product_id
                       WHERE purchases.customer_id = ?''', (customer_id,))
@@ -116,6 +131,31 @@ def calculate_total(customer_id):
         final_total = total - discount
         return jsonify({"total": total, "discount": discount, "final_total": final_total})
     return jsonify({"total": 0, "discount": 0, "final_total": 0})
+    
+    
+
+def calculate_total(customer_id):
+    try:
+        # Найти сумму всех товаров с указанным customer_id
+        cursor.execute("SELECT SUM(price) FROM products WHERE customer_id = ?", (customer_id,))
+        total = cursor.fetchone()[0] or 0  # Если нет записей, возвращаем 0
+        discount = total * 0.1  # Рассчитываем скидку
+        final_total = total - discount
+        return jsonify({"total": total, "discount": discount, "final_total": final_total})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
+@app.route('/update_customer/<int:product_id>', methods=['POST'])
+def update_customer(product_id):
+    customer_id = request.form['customer_id']
+    try:
+        cursor.execute("UPDATE products SET customer_id = ? WHERE id = ?", (customer_id, product_id))
+        conn.commit()  # Явно фиксируем транзакцию
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
 
     @app.route('/reset_ids', methods=['POST'])
     def reset_ids():
@@ -125,6 +165,8 @@ def calculate_total(customer_id):
             return jsonify({"success": True, "message": "ID sequence reset successfully!"})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)})
+
+
 
 # Example usage
 if __name__ == "__main__":

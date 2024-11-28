@@ -24,24 +24,42 @@
         form {
             margin-bottom: 20px;
         }
+        .total-container {
+            margin-top: 20px;
+        }
     </style>
     <script>
         async function handleFormSubmit(event, form) {
             event.preventDefault();
             const formData = new FormData(form);
-    
+
             const response = await fetch(form.action, {
                 method: form.method,
-                body: formData // Отправка данных как формы
+                body: formData
             });
-    
+
             if (response.ok) {
-                window.location.reload(); // Reload the page to show updated data
+                window.location.reload();
             } else {
                 alert('An error occurred while processing your request.');
             }
         }
-    </script>    
+
+        async function calculateTotal(event, form) {
+            event.preventDefault();
+            const formData = new FormData(form);
+            const customerID = formData.get("customer_id");
+
+            const response = await fetch(`/calculate_total/${customerID}`);
+            const result = await response.json();
+
+            if (response.ok) {
+                document.getElementById("totalDisplay").innerText = `Total: ${result.total}, Discount: ${result.discount}, Final Total: ${result.final_total}`;
+            } else {
+                document.getElementById("totalDisplay").innerText = "Error calculating total.";
+            }
+        }
+    </script>
 </head>
 <body>
     <h1>Product Management</h1>
@@ -53,6 +71,7 @@
                 <th>Name</th>
                 <th>Price</th>
                 <th>Product ID</th>
+                <th>Customer ID</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -64,7 +83,13 @@
                 <td>{{ product[2] }}</td>
                 <td>{{ product[3] }}</td>
                 <td>
-                    <form action="/delete_product/{{ product[0] }}" method="post" onsubmit="handleFormSubmit(event, this)" style="display:inline;">
+                    <form action="/update_customer/{{ product[0] }}" method="post" onsubmit="handleFormSubmit(event, this)">
+                        <input type="text" name="customer_id" value="{{ product[4] }}" placeholder="Enter Customer ID">
+                        <button type="submit">Save</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/delete_product/{{ product[0] }}" method="post" onsubmit="handleFormSubmit(event, this)">
                         <button type="submit">Delete</button>
                     </form>
                 </td>
@@ -83,5 +108,15 @@
         <input type="text" id="product_id" name="product_id" required>
         <button type="submit">Add Product</button>
     </form>
+
+    <div class="total-container">
+        <h2>Calculate Total for Customer</h2>
+        <form onsubmit="calculateTotal(event, this)">
+            <label for="customer_id">Customer ID:</label>
+            <input type="text" id="customer_id" name="customer_id" required>
+            <button type="submit">Calculate</button>
+        </form>
+        <p id="totalDisplay"></p>
+    </div>
 </body>
 </html>
