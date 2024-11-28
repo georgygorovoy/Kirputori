@@ -1,10 +1,9 @@
 import sqlite3
 from flask import Flask, request, jsonify, render_template
-
 app = Flask(__name__)
 
 # Подключение к базе данных
-conn = sqlite3.connect("store.db", check_same_thread=False)
+conn = sqlite3.connect("store2.db", check_same_thread=False)
 cursor = conn.cursor()
 
 # Маршруты приложения
