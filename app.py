@@ -1,13 +1,13 @@
 import sqlite3
-import pandas as pd
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-# Connect to SQLite database (creates a new database file if it doesn't exist)
+# Подключение к базе данных
 conn = sqlite3.connect("store.db", check_same_thread=False)
 cursor = conn.cursor()
 
+# Маршруты приложения
 try:
     cursor.execute('ALTER TABLE products ADD COLUMN customer_id TEXT DEFAULT NULL;')
     conn.commit()
@@ -74,7 +74,7 @@ def home():
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
-    price = request.form['price']
+    price = float(request.form['price'])
     product_id = request.form['product_id']
 
     try:
@@ -86,6 +86,7 @@ def add_product():
         # Добавить продукт с вручную рассчитанным ID
         cursor.execute('''INSERT INTO products (id, name, price, product_id) VALUES (?, ?, ?, ?)''',
                        (new_id, name, float(price), product_id))
+        cursor.execute("INSERT INTO products (name, price, product_id) VALUES (?, ?, ?)", (name, price, product_id))
         conn.commit()
         return jsonify({"success": True, "message": "Product added successfully!"})
     except Exception as e:
@@ -110,18 +111,6 @@ def delete_product(product_id):
         return jsonify({"success": True, "message": "Product deleted successfully!"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
-
-
-@app.route('/calculate_total/<string:customer_id>', methods=['GET'])
-def calculate_total(customer_id):
-    try:
-        cursor.execute("SELECT SUM(price) FROM products WHERE customer_id = ?", (customer_id,))
-        total = cursor.fetchone()[0] or 0  # Если записей нет, возвращаем 0
-        discount = total * 0.1  # Рассчитываем скидку
-        final_total = total - discount
-        return jsonify({"total": total, "discount": discount, "final_total": final_total})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
     cursor.execute('''SELECT SUM(products.price) FROM purchases
                       JOIN products ON purchases.product_id = products.product_id
                       WHERE purchases.customer_id = ?''', (customer_id,))
@@ -134,27 +123,17 @@ def calculate_total(customer_id):
     
     
 
-def calculate_total(customer_id):
-    try:
-        # Найти сумму всех товаров с указанным customer_id
-        cursor.execute("SELECT SUM(price) FROM products WHERE customer_id = ?", (customer_id,))
-        total = cursor.fetchone()[0] or 0  # Если нет записей, возвращаем 0
-        discount = total * 0.1  # Рассчитываем скидку
-        final_total = total - discount
-        return jsonify({"total": total, "discount": discount, "final_total": final_total})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
 
 @app.route('/update_customer/<int:product_id>', methods=['POST'])
 def update_customer(product_id):
     customer_id = request.form['customer_id']
     try:
         cursor.execute("UPDATE products SET customer_id = ? WHERE id = ?", (customer_id, product_id))
-        conn.commit()  # Явно фиксируем транзакцию
+        conn.commit()
         return jsonify(success=True)
     except Exception as e:
         return jsonify(success=False, error=str(e))
+
 
 
     @app.route('/reset_ids', methods=['POST'])
@@ -167,14 +146,32 @@ def update_customer(product_id):
             return jsonify({"success": False, "message": str(e)})
 
 
+@app.route('/calculate_total/<string:customer_id>', methods=['GET'])
+def calculate_total(customer_id):
+    try:
+        # Найти сумму цен всех товаров с указанным customer_id
+        cursor.execute("SELECT SUM(price), COUNT(*) FROM products WHERE customer_id = ?", (customer_id,))
+        result = cursor.fetchone()
+        total = result[0] or 0
+        item_count = result[1]
 
-# Example usage
+        # Рассчитать скидку в зависимости от количества товаров
+        if item_count >= 2:
+            discount = min(item_count * 2, 30)  # Удвоенная скидка за каждый товар начиная с двух, максимум 30%
+        else:
+            discount = 0
+
+        discount_amount = total * (discount / 100)
+        final_total = total - discount_amount
+
+        return jsonify({
+            "total": total,
+            "discount": f"{discount}%",
+            "final_total": final_total
+        })
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
+
 if __name__ == "__main__":
-    # Uncomment to import data from Excel
-    # excel_file_path = 'Kirputori _ 30.11 .xlsx'  # File located in the same directory
-    # import_excel_to_db(excel_file_path)
-
     app.run(debug=True)
-
-# Commit changes and close connection
-conn.commit()
