@@ -1,10 +1,56 @@
 import sqlite3
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from key import password
 app = Flask(__name__)
+app.secret_key = password  # Для использования сессий
 
-# Подключение к базе данных
+# Подключение к базе данных и маршруты, как было ранее
 conn = sqlite3.connect("store2.db", check_same_thread=False)
 cursor = conn.cursor()
+
+PASSWORD = password  # Установите ваш пароль
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        entered_password = request.form['password']
+        if entered_password == PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('home'))  # Перенаправляем на главную страницу
+        else:
+            return "The password is incorrect. Try again.", 401
+    return '''
+        <form method="post">
+            <label for="password">Enter the password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Log in</button>
+        </form>
+    '''
+
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False  # Сброс авторизации
+    return redirect(url_for('login'))
+
+@app.route('/')
+def home():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))  # Перенаправление на авторизацию
+    cursor.execute("SELECT * FROM products")
+    products = cursor.fetchall()
+    return render_template('index.html', products=products)
+
+# Создание таблиц
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    product_id TEXT UNIQUE NOT NULL,
+    customer_id TEXT DEFAULT NULL
+);
+''')
+
 
 # Маршруты приложения
 try:
@@ -64,11 +110,7 @@ def import_excel_to_db(file_path):
     print("Data imported successfully from Excel!")
 
 # Flask routes
-@app.route('/')
-def home():
-    cursor.execute("SELECT * FROM products")
-    products = cursor.fetchall()
-    return render_template('index.html', products=products)
+
 
 @app.route('/add_product', methods=['POST'])
 def add_product():

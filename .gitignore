@@ -1,5 +1,5 @@
 # Игнорировать файл
-/Users/georgygorovoy/Projects/AudioQuality/Sites/Kirputori/store.db 
+/Users/georgygorovoy/Projects/AudioQuality/Sites/Kirputori/key.py
 
 # Игнорировать все файлы с расширением .log
 *.log
