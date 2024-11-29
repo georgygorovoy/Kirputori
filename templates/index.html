@@ -27,6 +27,24 @@
         .total-container {
             margin-top: 20px;
         }
+        .columns {
+            display: flex;
+            gap: 20px; /* Расстояние между колонками */
+            margin-top: 20px;
+        }
+        .text-column {
+            flex: 2; /* Ширина текстовой колонки */
+        }
+        .image-column {
+            flex: 1; /* Ширина колонки с изображением */
+            display: flex;
+            align-items: center; /* Выравнивание по вертикали */
+            justify-content: center; /* Центрирование изображения */
+        }
+        .image-column img {
+            max-width: 100%; /* Изображение не выходит за пределы колонки */
+            height: auto; /* Сохраняет пропорции изображения */
+        }
     </style>
     <script>
         async function handleFormSubmit(event, form) {
@@ -121,5 +139,33 @@
         </form>
         <p id="totalDisplay"></p>
     </div>
+    <div class="columns">
+        <div class="text-column">
+            <h2>Инструкции</h2>
+            <p>Когда клиент приходит:</p>
+            <ol>
+                <li>Выберите продукт и введите идентификатор клиента (где написано «none»). Первый клиент — А1, второй — А2 и так далее.</li>
+                <br>
+                <li>Когда все товары будут выбраны, внизу появится сообщение «Рассчитать сумму для клиента Calculate Total for customer». Необходимо ввести идентификатор клиента и нажать «Calculate».</li>
+                <br>
+                <li>Теперь важно! После того, как клиент заплатил, введите «none» в поле идентификатора клиента и нажмите «Сохранить save».</li>
+                <br>
+            </ol>
+            <h2>Ohjeet:</h2>
+            <p>Когда клиент приходит:</p>
+            <ol>
+                <li>Valitse tuote ja kirjoita sinne asiakkaan ID ( missä lukee ”none”) Eli ensimmäinen asiakas on A1, toinen A2, ja niin edelleen.</li>
+                <br>
+                <li>Kuin kaikki tuotteet on valittu, alhaalla on ”Calculate Total for customer”. Sinne pitää kirjoittaa asiakkaan ID, ja paina calculate.</li>
+                <br>
+                <li>Sitten tärkeää!! Kuin asiakas on maksanut, sinne missä on asiakkaan ID pitää kirjoittaa takaisin ”none” ja sitten painaa save.</li>
+                <br>
+            </ol>
+        </div>
+        <div class="image-column">
+            <img src="../static/mobilePayAndreiEzhov.jpg" 
+                 alt="Mobile Pay" width="300px">
+        </div>
+    </div>    
 </body>
 </html>
